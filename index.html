@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POLYMIND v3 — AI × Polymarket</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#F5C430;--gold-dim:rgba(245,196,48,0.10);--gold-border:rgba(245,196,48,0.35);
+  --green:#22C55E;--green-dim:rgba(34,197,94,0.10);
+  --red:#EF4444;--red-dim:rgba(239,68,68,0.10);
+  --blue:#3B82F6;--blue-dim:rgba(59,130,246,0.10);
+  --bg:#090909;--surface:#111111;--surface2:#181818;--surface3:#1E1E1E;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#F0F0F0;--muted:#666;--muted2:#888;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;border-bottom:0.5px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:100}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:4px;color:var(--text)}
+.logo span{color:var(--gold)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.badge-v{font-size:9px;background:var(--gold);color:#111;padding:2px 7px;border-radius:2px;font-weight:700;letter-spacing:2px;font-family:'Space Mono',monospace}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.live-label{font-size:11px;color:var(--green);font-family:'Space Mono',monospace;letter-spacing:1px}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:320px 1fr;min-height:calc(100vh - 56px)}
+
+/* SIDEBAR */
+.sidebar{border-right:0.5px solid var(--border);background:var(--surface);display:flex;flex-direction:column;overflow:hidden}
+.sidebar-section{padding:16px}
+.sidebar-section+.sidebar-section{border-top:0.5px solid var(--border)}
+.section-title{font-size:9px;font-weight:600;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;font-family:'Space Mono',monospace}
+
+/* CONTROLS */
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.cat-btn{padding:8px 6px;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;border:0.5px solid var(--border);border-radius:5px;background:transparent;color:var(--muted2);cursor:pointer;transition:all .15s;font-family:'Space Mono',monospace}
+.cat-btn:hover{border-color:var(--border2);color:var(--text)}
+.cat-btn.active{border-color:var(--gold-border);color:var(--gold);background:var(--gold-dim)}
+.fetch-btn{width:100%;padding:10px;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;letter-spacing:2px;border:0.5px solid var(--gold-border);border-radius:5px;background:var(--gold);color:#111;cursor:pointer;transition:all .15s}
+.fetch-btn:hover{opacity:.88}
+.fetch-btn:disabled{opacity:.3;cursor:not-allowed}
+
+/* MARKET LIST */
+.market-scroll{flex:1;overflow-y:auto;padding:8px}
+.market-scroll::-webkit-scrollbar{width:3px}
+.market-scroll::-webkit-scrollbar-track{background:transparent}
+.market-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.mcard{border:0.5px solid var(--border);border-radius:7px;padding:11px 12px;background:transparent;cursor:pointer;transition:all .15s;margin-bottom:6px}
+.mcard:hover{border-color:rgba(245,196,48,0.25);background:var(--surface2)}
+.mcard.selected{border-color:var(--gold);background:var(--surface2)}
+.mcard-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.mcard-title{font-size:11px;font-weight:500;line-height:1.5;color:var(--text);flex:1}
+.mcard-price{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;flex-shrink:0;line-height:1}
+.price-high{color:var(--green)}
+.price-mid{color:var(--gold)}
+.price-low{color:var(--red)}
+.mcard-meta{display:flex;gap:10px;font-size:9px;color:var(--muted);font-family:'Space Mono',monospace}
+.mcard-bar{height:2px;background:var(--border2);border-radius:1px;margin-top:7px;overflow:hidden}
+.mcard-bar-fill{height:100%;border-radius:1px;transition:width .4s}
+
+/* WATCHLIST */
+.watchlist-empty{font-size:11px;color:var(--muted);padding:8px 0}
+.watch-item{display:flex;align-items:center;justify-content:space-between;padding:7px 8px;border:0.5px solid var(--border);border-radius:5px;margin-bottom:5px;cursor:pointer;transition:all .15s}
+.watch-item:hover{border-color:var(--border2)}
+.watch-title{font-size:10px;color:var(--text);flex:1;margin-right:8px;line-height:1.4}
+.watch-price{font-family:'Bebas Neue',sans-serif;font-size:18px}
+.watch-remove{color:var(--muted);font-size:14px;cursor:pointer;padding:0 2px;transition:color .15s}
+.watch-remove:hover{color:var(--red)}
+
+/* MAIN PANEL */
+.main{display:flex;flex-direction:column;background:var(--bg);overflow:hidden}
+
+/* STATS BAR */
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:0.5px solid var(--border);background:var(--surface)}
+.stat-cell{padding:14px 20px;border-right:0.5px solid var(--border)}
+.stat-cell:last-child{border-right:none}
+.stat-label{font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;font-family:'Space Mono',monospace;margin-bottom:4px}
+.stat-value{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;line-height:1}
+.stat-sub{font-size:9px;color:var(--muted);margin-top:2px;font-family:'Space Mono',monospace}
+
+/* TABS */
+.tabs{display:flex;border-bottom:0.5px solid var(--border);background:var(--surface);padding:0 20px}
+.tab{padding:12px 16px;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;font-family:'Space Mono',monospace;margin-bottom:-0.5px}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+
+/* TAB CONTENT */
+.tab-content{display:none;flex:1;overflow-y:auto;padding:20px}
+.tab-content.active{display:flex;flex-direction:column;gap:16px}
+.tab-content::-webkit-scrollbar{width:3px}
+.tab-content::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* UTILITY CLASSES */
+.hidden{display:none!important}
+.topbar-brand{display:flex;align-items:center;gap:10px}
+.market-empty{padding:20px;text-align:center}
+.market-empty-text{font-size:10px;color:var(--muted);font-family:'Space Mono',monospace}
+.stat-price-accent{color:var(--gold)}
+.analysis-actions{display:flex;align-items:center;gap:10px}
+.input-col{flex:1}
+.ev-card--compact{margin-top:0}
+.input-row--horizontal{flex-direction:row;align-items:center;gap:12px}
+.sim-result{margin-top:10px;font-size:12px;color:var(--muted2);font-family:'Space Mono',monospace;line-height:1.8}
+.sim-chart{margin-top:12px}
+
+/* ANALYSIS */
+.analysis-card{border:0.5px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface)}
+.analysis-header{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;background:var(--surface2);border-bottom:0.5px solid var(--border)}
+.analysis-header-left{display:flex;align-items:center;gap:8px}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.pulse.on{animation:blink 1s ease-in-out infinite}
+.analysis-label{font-size:9px;font-weight:700;letter-spacing:2px;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase}
+.analysis-market-name{font-size:11px;color:var(--muted2);max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn-watch{padding:5px 10px;font-size:9px;font-weight:700;letter-spacing:1px;border:0.5px solid var(--border2);border-radius:4px;background:transparent;color:var(--muted2);cursor:pointer;font-family:'Space Mono',monospace;transition:all .15s}
+.btn-watch:hover{border-color:var(--gold-border);color:var(--gold)}
+.analysis-body{padding:18px 16px;font-size:13px;line-height:1.8;color:var(--text);min-height:120px}
+.analysis-body strong,.analysis-body b{color:var(--gold);font-weight:600}
+.placeholder{color:var(--muted);font-size:12px;font-family:'Space Mono',monospace}
+.analyze-cta{display:flex;align-items:center;gap:10px}
+.analyze-btn{padding:10px 20px;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;letter-spacing:2px;border:0.5px solid var(--gold-border);border-radius:5px;background:var(--gold);color:#111;cursor:pointer;transition:all .15s}
+.analyze-btn:hover{opacity:.88}
+.analyze-btn:disabled{opacity:.3;cursor:not-allowed}
+
+/* VERDICT */
+.verdict-row{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+.verdict{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:2px;font-family:'Space Mono',monospace}
+.verdict-yes{background:var(--green-dim);color:var(--green);border:0.5px solid rgba(34,197,94,.3)}
+.verdict-no{background:var(--red-dim);color:var(--red);border:0.5px solid rgba(239,68,68,.25)}
+.verdict-neutral{background:var(--gold-dim);color:var(--gold);border:0.5px solid var(--gold-border)}
+.conviction{font-size:10px;color:var(--muted2);font-family:'Space Mono',monospace}
+
+/* EV + KELLY */
+.ev-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ev-card{border:0.5px solid var(--border);border-radius:8px;padding:16px;background:var(--surface)}
+.ev-title{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:14px;font-family:'Space Mono',monospace}
+.input-row{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.input-label{font-size:10px;color:var(--muted2);font-family:'Space Mono',monospace}
+.ev-input{background:var(--surface2);border:0.5px solid var(--border2);border-radius:5px;padding:8px 10px;font-family:'Space Mono',monospace;font-size:12px;color:var(--text);width:100%;transition:border-color .15s}
+.ev-input:focus{outline:none;border-color:var(--gold-border)}
+.ev-result{border-top:0.5px solid var(--border);padding-top:12px;margin-top:4px}
+.ev-result-label{font-size:9px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:4px;text-transform:uppercase;letter-spacing:2px}
+.ev-result-value{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px}
+.ev-positive{color:var(--green)}
+.ev-negative{color:var(--red)}
+.ev-neutral{color:var(--gold)}
+.ev-sub{font-size:10px;color:var(--muted2);font-family:'Space Mono',monospace;margin-top:2px}
+.calc-btn{width:100%;margin-top:10px;padding:9px;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:2px;border:0.5px solid var(--border2);border-radius:5px;background:var(--surface2);color:var(--text);cursor:pointer;transition:all .15s}
+.calc-btn:hover{border-color:var(--gold-border);color:var(--gold)}
+
+/* CHAT */
+.chat-wrap{display:flex;flex-direction:column;flex:1;min-height:0;border:0.5px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface)}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;min-height:300px;max-height:460px}
+.chat-messages::-webkit-scrollbar{width:3px}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.msg{max-width:82%;padding:10px 14px;border-radius:8px;font-size:12px;line-height:1.7}
+.msg.user{align-self:flex-end;background:var(--gold);color:#111;font-weight:500;border-radius:8px 8px 2px 8px}
+.msg.ai{align-self:flex-start;background:var(--surface2);color:var(--text);border:0.5px solid var(--border);border-radius:8px 8px 8px 2px}
+.msg.ai strong,.msg.ai b{color:var(--gold)}
+.msg-typing{align-self:flex-start;background:var(--surface2);border:0.5px solid var(--border);border-radius:8px 8px 8px 2px;padding:12px 16px}
+.typing-dots{display:flex;gap:5px}
+.typing-dots span{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:typing .9s ease-in-out infinite}
+.typing-dots span:nth-child(2){animation-delay:.15s}
+.typing-dots span:nth-child(3){animation-delay:.3s}
+@keyframes typing{0%,100%{opacity:.3;transform:scale(.85)}50%{opacity:1;transform:scale(1)}}
+.chat-input-row{display:flex;gap:8px;padding:12px;border-top:0.5px solid var(--border);background:var(--surface2)}
+.chat-input{flex:1;background:var(--surface);border:0.5px solid var(--border2);border-radius:5px;padding:9px 12px;font-family:'Inter',sans-serif;font-size:12px;color:var(--text);transition:border-color .15s;resize:none}
+.chat-input:focus{outline:none;border-color:var(--gold-border)}
+.chat-send{padding:9px 16px;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:1px;border:0.5px solid var(--gold-border);border-radius:5px;background:var(--gold);color:#111;cursor:pointer;transition:all .15s;white-space:nowrap}
+.chat-send:disabled{opacity:.3;cursor:not-allowed}
+.chat-suggestions{display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px;border-top:0.5px solid var(--border)}
+.chip{padding:5px 10px;font-size:10px;border:0.5px solid var(--border2);border-radius:20px;color:var(--muted2);cursor:pointer;font-family:'Space Mono',monospace;transition:all .15s;white-space:nowrap}
+.chip:hover{border-color:var(--gold-border);color:var(--gold);background:var(--gold-dim)}
+
+/* SKELETON */
+.skeleton{height:12px;background:var(--surface3);border-radius:3px;margin-bottom:8px;animation:shimmer 1.5s ease-in-out infinite}
+@keyframes shimmer{0%,100%{opacity:.4}50%{opacity:.8}}
+
+/* EMPTY STATE */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 20px;text-align:center;gap:12px}
+.empty-icon{font-size:36px;opacity:.2}
+.empty-title{font-size:14px;font-weight:600;color:var(--text)}
+.empty-sub{font-size:12px;color:var(--muted);max-width:280px;line-height:1.6}
+
+/* MULTI-ANALYSIS */
+.multi-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.multi-title{font-size:11px;font-weight:600;color:var(--text)}
+.multi-sub{font-size:10px;color:var(--muted);font-family:'Space Mono',monospace}
+.btn-multi{padding:8px 16px;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:1px;border:0.5px solid var(--border2);border-radius:5px;background:var(--surface2);color:var(--text);cursor:pointer;transition:all .15s}
+.btn-multi:hover{border-color:var(--gold-border);color:var(--gold)}
+.btn-multi:disabled{opacity:.3;cursor:not-allowed}
+.multi-grid{display:flex;flex-direction:column;gap:10px}
+.mini-analysis{border:0.5px solid var(--border);border-radius:7px;padding:12px 14px;background:var(--surface)}
+.mini-question{font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;line-height:1.4}
+.mini-meta{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.mini-price{font-family:'Bebas Neue',sans-serif;font-size:20px}
+.mini-vol{font-size:9px;color:var(--muted);font-family:'Space Mono',monospace}
+.mini-verdict{font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 9px;border-radius:3px;font-family:'Space Mono',monospace}
+.mini-analysis-text{font-size:11px;color:var(--muted2);line-height:1.6;margin-top:6px}
+
+/* FOOTER */
+.footer{padding:12px 20px;border-top:0.5px solid var(--border);font-size:9px;color:var(--muted);font-family:'Space Mono',monospace;background:var(--surface);text-align:center;letter-spacing:1px}
+
+/* SCROLLBAR GLOBAL */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{border-right:none;border-bottom:0.5px solid var(--border);max-height:400px}
+  .stats-bar{grid-template-columns:repeat(2,1fr)}
+  .ev-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="logo">POLY<span>MIND</span></div>
+    <div class="badge-v">V3</div>
+  </div>
+  <div class="topbar-right">
+    <div class="live-dot"></div>
+    <div class="live-label">LIVE</div>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="section-title">Catégorie</div>
+      <div class="cat-grid">
+        <button class="cat-btn active" data-cat="politics" onclick="selectCat(this)">Politique</button>
+        <button class="cat-btn" data-cat="crypto" onclick="selectCat(this)">Crypto</button>
+        <button class="cat-btn" data-cat="sports" onclick="selectCat(this)">Sports</button>
+        <button class="cat-btn" data-cat="economy" onclick="selectCat(this)">Économie</button>
+        <button class="cat-btn" data-cat="world" onclick="selectCat(this)">Monde</button>
+        <button class="cat-btn" data-cat="all" onclick="selectCat(this)">Tout</button>
+      </div>
+      <button class="fetch-btn" id="fetch-btn" onclick="fetchMarkets()">↓ CHARGER</button>
+    </div>
+
+    <div class="market-scroll" id="market-scroll">
+      <div class="market-empty">
+        <div class="market-empty-text">Clique sur CHARGER</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-title">Watchlist</div>
+      <div id="watchlist-zone"><div class="watchlist-empty">Aucun marché suivi</div></div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- STATS BAR -->
+    <div class="stats-bar">
+      <div class="stat-cell">
+        <div class="stat-label">Marchés chargés</div>
+        <div class="stat-value" id="stat-count">—</div>
+        <div class="stat-sub" id="stat-cat">—</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">Marché sélectionné</div>
+        <div class="stat-value stat-price-accent" id="stat-price">—</div>
+        <div class="stat-sub" id="stat-vol">VOL —</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">EV estimé</div>
+        <div class="stat-value" id="stat-ev">—</div>
+        <div class="stat-sub" id="stat-ev-sub">—</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">Kelly recommandé</div>
+        <div class="stat-value" id="stat-kelly">—</div>
+        <div class="stat-sub" id="stat-kelly-sub">Sur $10</div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('analyse',this)">Analyse IA</div>
+      <div class="tab" onclick="switchTab('scanner',this)">Scanner multi</div>
+      <div class="tab" onclick="switchTab('ev',this)">EV + Kelly</div>
+      <div class="tab" onclick="switchTab('chat',this)">Chat IA</div>
+    </div>
+
+    <!-- TAB: ANALYSE -->
+    <div class="tab-content active" id="tab-analyse">
+      <div class="analysis-card" id="analysis-card">
+        <div class="analysis-header">
+          <div class="analysis-header-left">
+            <div class="pulse" id="pulse"></div>
+            <div>
+              <div class="analysis-label">Claude Sonnet — Analyste Polymarket</div>
+              <div class="analysis-market-name" id="analysis-market-name">Aucun marché sélectionné</div>
+            </div>
+          </div>
+          <button class="btn-watch hidden" id="btn-watch" onclick="addToWatchlist()">+ SUIVRE</button>
+        </div>
+        <div class="analysis-body" id="analysis-body">
+          <div class="empty-state">
+            <div class="empty-icon">⚡</div>
+            <div class="empty-title">Sélectionne un marché</div>
+            <div class="empty-sub">Charge les marchés dans la sidebar, sélectionne-en un, puis lance l'analyse IA.</div>
+          </div>
+        </div>
+      </div>
+      <div id="analyze-row" class="hidden">
+        <button class="analyze-btn" id="analyze-btn" onclick="analyzeMarket()">⚡ ANALYSER AVEC L'IA</button>
+      </div>
+    </div>
+
+    <!-- TAB: SCANNER MULTI -->
+    <div class="tab-content" id="tab-scanner">
+      <div class="multi-header">
+        <div>
+          <div class="multi-title">Scanner multi-marchés</div>
+          <div class="multi-sub">Analyse simultanée de tous les marchés chargés</div>
+        </div>
+        <button class="btn-multi" id="scan-btn" onclick="runScanner()">⚡ SCANNER TOUT</button>
+      </div>
+      <div class="multi-grid" id="multi-grid">
+        <div class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <div class="empty-title">Aucun scan lancé</div>
+          <div class="empty-sub">Charge des marchés puis lance le scanner pour un aperçu rapide de tous les signaux.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: EV + KELLY -->
+    <div class="tab-content" id="tab-ev">
+      <div class="ev-grid">
+        <div class="ev-card">
+          <div class="ev-title">Calculateur EV</div>
+          <div class="input-row">
+            <div class="input-label">Prix marché (prob. implicite %)</div>
+            <input class="ev-input" id="ev-market-price" type="number" min="1" max="99" value="50" placeholder="50">
+          </div>
+          <div class="input-row">
+            <div class="input-label">Ta probabilité estimée (%)</div>
+            <input class="ev-input" id="ev-true-prob" type="number" min="1" max="99" value="60" placeholder="60">
+          </div>
+          <div class="input-row">
+            <div class="input-label">Mise ($)</div>
+            <input class="ev-input" id="ev-stake" type="number" min="0.1" value="10" placeholder="10">
+          </div>
+          <button class="calc-btn" onclick="calcEV()">CALCULER EV</button>
+          <div class="ev-result hidden" id="ev-result">
+            <div class="ev-result-label">Expected Value</div>
+            <div class="ev-result-value" id="ev-value">—</div>
+            <div class="ev-sub" id="ev-sub">—</div>
+          </div>
+        </div>
+
+        <div class="ev-card">
+          <div class="ev-title">Kelly Criterion</div>
+          <div class="input-row">
+            <div class="input-label">Probabilité de gagner (%)</div>
+            <input class="ev-input" id="kelly-prob" type="number" min="1" max="99" value="60" placeholder="60">
+          </div>
+          <div class="input-row">
+            <div class="input-label">Cote (payout si victoire, ex: 1.9)</div>
+            <input class="ev-input" id="kelly-odds" type="number" min="1.01" step="0.01" value="1.9" placeholder="1.9">
+          </div>
+          <div class="input-row">
+            <div class="input-label">Bankroll totale ($)</div>
+            <input class="ev-input" id="kelly-bankroll" type="number" min="1" value="10" placeholder="10">
+          </div>
+          <button class="calc-btn" onclick="calcKelly()">CALCULER KELLY</button>
+          <div class="ev-result hidden" id="kelly-result">
+            <div class="ev-result-label">Mise optimale (Kelly)</div>
+            <div class="ev-result-value" id="kelly-value">—</div>
+            <div class="ev-sub" id="kelly-sub">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ev-card ev-card--compact">
+        <div class="ev-title">Simulateur de croissance ($10)</div>
+        <div class="input-row input-row--horizontal">
+          <div class="input-col">
+            <div class="input-label">Win rate (%)</div>
+            <input class="ev-input" id="sim-winrate" type="number" min="1" max="99" value="55" oninput="runSimulation()">
+          </div>
+          <div class="input-col">
+            <div class="input-label">% bankroll par trade</div>
+            <input class="ev-input" id="sim-pct" type="number" min="1" max="50" value="10" oninput="runSimulation()">
+          </div>
+          <div class="input-col">
+            <div class="input-label">Nombre de trades</div>
+            <input class="ev-input" id="sim-trades" type="number" min="5" max="200" value="50" oninput="runSimulation()">
+          </div>
+        </div>
+        <div class="sim-result" id="sim-result"></div>
+        <div class="sim-chart" id="sim-chart"></div>
+      </div>
+    </div>
+
+    <!-- TAB: CHAT -->
+    <div class="tab-content" id="tab-chat">
+      <div class="chat-wrap">
+        <div class="chat-messages" id="chat-messages">
+          <div class="msg ai">
+            <strong>POLYMIND v3</strong> — Bonjour. Je suis ton analyste Polymarket IA.<br><br>
+            Pose-moi n'importe quelle question sur les marchés de prédiction, les stratégies de trading, ou demande-moi d'analyser un marché spécifique.
+          </div>
+        </div>
+        <div class="chat-suggestions">
+          <div class="chip" onclick="sendChip(this)">Quelle est la meilleure stratégie avec $10 ?</div>
+          <div class="chip" onclick="sendChip(this)">Explique-moi le Kelly Criterion</div>
+          <div class="chip" onclick="sendChip(this)">Comment détecter un marché sous-évalué ?</div>
+          <div class="chip" onclick="sendChip(this)">Quels sont les risques principaux ?</div>
+        </div>
+        <div class="chat-input-row">
+          <textarea class="chat-input" id="chat-input" rows="1" placeholder="Pose ta question..." onkeydown="chatKeydown(event)"></textarea>
+          <button class="chat-send" id="chat-send" onclick="sendChat()">ENVOYER</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer">POLYMIND v3 — Données Polymarket CLOB API · IA Anthropic Claude Sonnet · Outil d'analyse uniquement — pas un conseil financier</div>
+
+<script>
+const DEMO = {
+  politics:[
+    {question:'Trump signs executive order on crypto before July 2026?',outcomePrices:'[0.72]',volume:31000000,endDate:'2026-07-01'},
+    {question:'Marine Le Pen wins French presidency 2027?',outcomePrices:'[0.48]',volume:9800000,endDate:'2027-05-01'},
+    {question:'UK general election called before end of 2026?',outcomePrices:'[0.19]',volume:4200000,endDate:'2026-12-31'},
+    {question:'Emmanuel Macron resigns in 2026?',outcomePrices:'[0.08]',volume:2100000,endDate:'2026-12-31'},
+    {question:'Modi wins Indian election 2029?',outcomePrices:'[0.61]',volume:7700000,endDate:'2029-06-01'},
+  ],
+  crypto:[
+    {question:'Bitcoin above $150k before end of 2026?',outcomePrices:'[0.44]',volume:52000000,endDate:'2026-12-31'},
+    {question:'Ethereum flips Bitcoin by market cap in 2026?',outcomePrices:'[0.09]',volume:11200000,endDate:'2026-12-31'},
+    {question:'XRP becomes #2 crypto by market cap?',outcomePrices:'[0.27]',volume:8900000,endDate:'2027-01-01'},
+    {question:'BTC spot ETF reaches $100B AUM in 2026?',outcomePrices:'[0.55]',volume:18400000,endDate:'2026-12-31'},
+    {question:'Solana surpasses $500 before 2027?',outcomePrices:'[0.38]',volume:14300000,endDate:'2026-12-31'},
+  ],
+  sports:[
+    {question:'Real Madrid wins Champions League 2025/26?',outcomePrices:'[0.22]',volume:21400000,endDate:'2026-05-30'},
+    {question:'LeBron James retires in 2026?',outcomePrices:'[0.31]',volume:6700000,endDate:'2026-12-31'},
+    {question:'France wins FIFA World Cup 2026?',outcomePrices:'[0.16]',volume:33000000,endDate:'2026-07-20'},
+    {question:'Brazil wins FIFA World Cup 2026?',outcomePrices:'[0.19]',volume:28000000,endDate:'2026-07-20'},
+    {question:'Novak Djokovic wins Wimbledon 2026?',outcomePrices:'[0.28]',volume:9100000,endDate:'2026-07-15'},
+  ],
+  economy:[
+    {question:'US recession declared in 2026?',outcomePrices:'[0.33]',volume:22000000,endDate:'2026-12-31'},
+    {question:'Fed cuts rates 3+ times before end of 2026?',outcomePrices:'[0.47]',volume:16800000,endDate:'2026-12-31'},
+    {question:'US unemployment above 5% in 2026?',outcomePrices:'[0.29]',volume:9400000,endDate:'2026-12-31'},
+    {question:'Oil price above $100/barrel in 2026?',outcomePrices:'[0.21]',volume:7300000,endDate:'2026-12-31'},
+  ],
+  world:[
+    {question:'Russia-Ukraine ceasefire before Jan 2027?',outcomePrices:'[0.52]',volume:41000000,endDate:'2026-12-31'},
+    {question:'China invades Taiwan before 2028?',outcomePrices:'[0.11]',volume:18700000,endDate:'2027-12-31'},
+    {question:'Israel-Hamas ceasefire holds through 2026?',outcomePrices:'[0.38]',volume:14200000,endDate:'2026-12-31'},
+    {question:'Iran nuclear deal signed in 2026?',outcomePrices:'[0.23]',volume:8900000,endDate:'2026-12-31'},
+  ],
+  all:[]
+};
+
+let selectedCat = 'politics';
+let markets = [];
+let selectedMarket = null;
+let watchlist = JSON.parse(localStorage.getItem('pm_watchlist') || '[]');
+let chatHistory = [];
+
+function selectCat(btn) {
+  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedCat = btn.dataset.cat;
+}
+
+async function fetchMarkets() {
+  const btn = document.getElementById('fetch-btn');
+  const scroll = document.getElementById('market-scroll');
+  btn.disabled = true; btn.textContent = '⟳ CHARGEMENT...';
+  scroll.innerHTML = '<div style="padding:16px">' + [1,2,3,4,5].map(()=>`<div style="border:0.5px solid var(--border);border-radius:7px;padding:11px 12px;margin-bottom:6px"><div class="skeleton" style="width:85%;margin-bottom:8px"></div><div class="skeleton" style="width:55%"></div></div>`).join('') + '</div>';
+
+  let data = [];
+  try {
+    const url = 'https://gamma-api.polymarket.com/markets?active=true&closed=false&limit=20&order=volume24hr&ascending=false';
+    const r = await fetch(url, {headers:{Accept:'application/json'}});
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    data = (Array.isArray(d)?d:[]).slice(0,8);
+    if (!data.length) throw new Error('vide');
+  } catch(e) {
+    let src = selectedCat === 'all'
+      ? [...DEMO.politics,...DEMO.crypto,...DEMO.sports,...DEMO.economy,...DEMO.world]
+      : (DEMO[selectedCat]||DEMO.politics);
+    data = src;
+    document.getElementById('stat-cat').textContent = 'DÉMO — API inaccessible';
+  }
+
+  markets = data;
+  document.getElementById('stat-count').textContent = markets.length;
+  if (!document.getElementById('stat-cat').textContent.includes('DÉMO'))
+    document.getElementById('stat-cat').textContent = selectedCat.toUpperCase();
+
+  renderMarkets();
+  btn.disabled = false; btn.textContent = '↓ CHARGER';
+}
+
+function renderMarkets() {
+  const scroll = document.getElementById('market-scroll');
+  scroll.innerHTML = '';
+  markets.forEach((m,i) => {
+    const price = parsePrice(m.outcomePrices||m.tokens);
+    const pct = price!==null ? Math.round(price*100) : null;
+    const pClass = price>0.65?'price-high':price<0.35?'price-low':'price-mid';
+    const vol = m.volume ? fmtVol(m.volume) : '—';
+    const title = m.question||m.title||'Marché';
+    const barColor = price>0.65?'var(--green)':price<0.35?'var(--red)':'var(--gold)';
+
+    const card = document.createElement('div');
+    card.className = 'mcard' + (selectedMarket && selectedMarket._idx===i?' selected':'');
+    card.dataset.idx = i;
+    card.innerHTML = `
+      <div class="mcard-top">
+        <div class="mcard-title">${title}</div>
+        <div class="mcard-price ${pClass}">${pct!==null?pct+'%':'?'}</div>
+      </div>
+      <div class="mcard-meta">
+        <span>VOL ${vol}</span>
+        ${(m.endDate||m.end_date_iso)?`<span>FIN ${(m.endDate||m.end_date_iso).slice(0,10)}</span>`:''}
+      </div>
+      <div class="mcard-bar"><div class="mcard-bar-fill" style="width:${pct||50}%;background:${barColor}"></div></div>
+    `;
+    card.addEventListener('click', ()=>selectMarket(i));
+    scroll.appendChild(card);
+  });
+}
+
+function parsePrice(raw) {
+  try {
+    if (!raw) return null;
+    if (typeof raw==='number') return raw;
+    if (typeof raw==='string') return parseFloat(JSON.parse(raw)[0]);
+    if (Array.isArray(raw)) return typeof raw[0]==='object'?parseFloat(raw[0].price):parseFloat(raw[0]);
+  } catch{}
+  return null;
+}
+
+function fmtVol(v) {
+  v=parseFloat(v);if(isNaN(v))return'—';
+  if(v>=1e6)return'$'+(v/1e6).toFixed(1)+'M';
+  if(v>=1e3)return'$'+Math.round(v/1e3)+'K';
+  return'$'+Math.round(v);
+}
+
+function selectMarket(i) {
+  document.querySelectorAll('.mcard').forEach(c=>c.classList.remove('selected'));
+  document.querySelector(`.mcard[data-idx="${i}"]`)?.classList.add('selected');
+  selectedMarket = {...markets[i], _idx:i};
+
+  const price = parsePrice(selectedMarket.outcomePrices||selectedMarket.tokens);
+  const pct = price!==null?Math.round(price*100):null;
+  const vol = selectedMarket.volume?fmtVol(selectedMarket.volume):'—';
+  const title = selectedMarket.question||selectedMarket.title||'';
+
+  document.getElementById('stat-price').textContent = pct!==null?pct+'%':'—';
+  document.getElementById('stat-vol').textContent = 'VOL '+vol;
+  document.getElementById('analysis-market-name').textContent = title;
+  document.getElementById('btn-watch').style.display = 'block';
+
+  // Reset analysis
+  document.getElementById('analysis-body').innerHTML = `<div style="margin-bottom:14px;font-size:12px;color:var(--muted2);line-height:1.6">Marché sélectionné : <strong style="color:var(--text)">${title}</strong><br>Prix : <strong style="color:var(--gold)">${pct!==null?pct+'%':'?'}</strong> · Volume : ${vol}</div><div style="display:flex;align-items:center;gap:10px"><button class="analyze-btn" onclick="analyzeMarket()">⚡ ANALYSER AVEC L'IA</button></div>`;
+  document.getElementById('analyze-row').style.display = 'none';
+
+  // Auto-fill EV inputs
+  if (pct!==null) {
+    document.getElementById('ev-market-price').value = pct;
+    document.getElementById('kelly-prob').value = pct;
+  }
+
+  updateStats();
+  switchTab('analyse', document.querySelector('.tab'));
+}
+
+function updateStats() {
+  if (!selectedMarket) return;
+  const price = parsePrice(selectedMarket.outcomePrices||selectedMarket.tokens);
+  if (price===null) return;
+  const pct = price*100;
+  // Quick EV estimate (assuming slight edge)
+  const ev = ((1/price)*0.55 - 1).toFixed(3);
+  const evNum = parseFloat(ev);
+  document.getElementById('stat-ev').textContent = (evNum>0?'+':'')+evNum.toFixed(3);
+  document.getElementById('stat-ev').style.color = evNum>0?'var(--green)':evNum<0?'var(--red)':'var(--gold)';
+  document.getElementById('stat-ev-sub').textContent = evNum>0.03?'EDGE DÉTECTÉ':evNum<0?'EV NÉGATIF':'NEUTRE';
+
+  // Kelly
+  const b = (1/price)-1;
+  const p = 0.55, q = 0.45;
+  const k = Math.max(0, (p*b-q)/b);
+  const halfK = k/2;
+  const mise = (halfK*10).toFixed(2);
+  document.getElementById('stat-kelly').textContent = (halfK*100).toFixed(1)+'%';
+  document.getElementById('stat-kelly-sub').textContent = 'MISE: $'+mise+' sur $10';
+}
+
+async function analyzeMarket() {
+  if (!selectedMarket) return;
+  const body = document.getElementById('analysis-body');
+  const pulse = document.getElementById('pulse');
+
+  pulse.classList.add('on');
+  body.innerHTML = '<div class="skeleton" style="width:90%"></div><div class="skeleton" style="width:75%"></div><div class="skeleton" style="width:82%"></div><div class="skeleton" style="width:60%"></div><div class="skeleton" style="width:70%"></div>';
+
+  const price = parsePrice(selectedMarket.outcomePrices||selectedMarket.tokens);
+  const pct = price!==null?Math.round(price*100):'?';
+  const vol = selectedMarket.volume?fmtVol(selectedMarket.volume):'inconnu';
+  const title = selectedMarket.question||selectedMarket.title||'';
+
+  const prompt = `Tu es un analyste expert en marchés de prédiction (Polymarket). Analyse ce marché de façon concise et percutante.
+
+MARCHÉ : "${title}"
+PROBABILITÉ IMPLICITE : ${pct}%
+VOLUME : ${vol}
+DATE FIN : ${selectedMarket.endDate?(selectedMarket.endDate).slice(0,10):'inconnue'}
+
+Structure ta réponse ainsi :
+**ÉVALUATION** : Le prix de ${pct}% est-il juste, surévalué, ou sous-évalué ? (2-3 phrases max)
+**FACTEURS CLÉS** : 2-3 points déterminants pour ce marché
+**RISQUES** : 1-2 risques principaux à surveiller
+**VERDICT** : BUY YES / BUY NO / NEUTRE + conviction (FAIBLE/MOYEN/FORT) + justification courte
+
+Sois direct, chiffré, sans jargon inutile. Réponds en français.`;
+
+  try {
+    const r = await fetch('/api/claude', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:800,messages:[{role:'user',content:prompt}]})
+    });
+    if (!r.ok) throw new Error('API '+r.status);
+    const d = await r.json();
+    const text = d.content?.[0]?.text||'';
+    renderAnalysis(body, text);
+  } catch(e) {
+    body.innerHTML = `<div class="placeholder" style="color:var(--red)">⚠ Erreur : ${e.message}</div>`;
+  }
+  pulse.classList.remove('on');
+}
+
+function renderAnalysis(el, text) {
+  let verdictHTML = '';
+  let conviction = '';
+  if (/CONVICTION[^\n]*FORT/i.test(text)) conviction = '● CONVICTION FORTE';
+  else if (/CONVICTION[^\n]*MOYEN/i.test(text)) conviction = '◑ CONVICTION MOYENNE';
+  else conviction = '○ CONVICTION FAIBLE';
+
+  if (/BUY YES/i.test(text)) verdictHTML = `<div class="verdict verdict-yes">▲ BUY YES</div><span class="conviction">${conviction}</span>`;
+  else if (/BUY NO/i.test(text)) verdictHTML = `<div class="verdict verdict-no">▼ BUY NO</div><span class="conviction">${conviction}</span>`;
+  else verdictHTML = `<div class="verdict verdict-neutral">◆ NEUTRE</div><span class="conviction">${conviction}</span>`;
+
+  const html = text
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\n- /g,'<br>• ')
+    .replace(/\n\n/g,'<br><br>')
+    .replace(/\n/g,'<br>');
+
+  el.innerHTML = html + `<div class="verdict-row">${verdictHTML}</div>`;
+}
+
+function addToWatchlist() {
+  if (!selectedMarket) return;
+  const exists = watchlist.find(w=>w.question===selectedMarket.question);
+  if (exists) return;
+  watchlist.push({...selectedMarket});
+  localStorage.setItem('pm_watchlist', JSON.stringify(watchlist));
+  renderWatchlist();
+}
+
+function renderWatchlist() {
+  const zone = document.getElementById('watchlist-zone');
+  if (!watchlist.length) { zone.innerHTML = '<div class="watchlist-empty">Aucun marché suivi</div>'; return; }
+  zone.innerHTML = watchlist.map((w,i) => {
+    const price = parsePrice(w.outcomePrices||w.tokens);
+    const pct = price!==null?Math.round(price*100):null;
+    const pClass = price>0.65?'price-high':price<0.35?'price-low':'price-mid';
+    return `<div class="watch-item">
+      <div class="watch-title">${(w.question||w.title||'').slice(0,55)}…</div>
+      <div class="watch-price ${pClass}">${pct!==null?pct+'%':'?'}</div>
+      <div class="watch-remove" onclick="removeWatch(${i})">✕</div>
+    </div>`;
+  }).join('');
+}
+
+function removeWatch(i) {
+  watchlist.splice(i,1);
+  localStorage.setItem('pm_watchlist', JSON.stringify(watchlist));
+  renderWatchlist();
+}
+
+async function runScanner() {
+  if (!markets.length) { alert('Charge des marchés d\'abord.'); return; }
+  const btn = document.getElementById('scan-btn');
+  const grid = document.getElementById('multi-grid');
+  btn.disabled = true; btn.textContent = '⟳ SCAN EN COURS...';
+
+  grid.innerHTML = markets.map((_,i) => `<div class="mini-analysis" id="mini-${i}"><div class="skeleton" style="width:85%"></div><div class="skeleton" style="width:55%"></div></div>`).join('');
+
+  const batchPrompt = `Analyse ces ${markets.length} marchés Polymarket rapidement. Pour chacun, donne UNE ligne : VERDICT (BUY YES/BUY NO/NEUTRE) + 1 phrase d'explication. Format : "N. [VERDICT] — explication"
+
+${markets.map((m,i)=>{
+  const p=parsePrice(m.outcomePrices||m.tokens);
+  const pct=p!==null?Math.round(p*100):'?';
+  return `${i+1}. "${m.question||m.title}" — Prix: ${pct}% — Vol: ${m.volume?fmtVol(m.volume):'—'}`;
+}).join('\n')}
+
+Réponds en français, sois ultra-concis.`;
+
+  try {
+    const r = await fetch('/api/claude', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:batchPrompt}]})
+    });
+    const d = await r.json();
+    const text = d.content?.[0]?.text||'';
+    const lines = text.split('\n').filter(l=>l.trim());
+
+    markets.forEach((m,i) => {
+      const el = document.getElementById('mini-'+i);
+      if (!el) return;
+      const price = parsePrice(m.outcomePrices||m.tokens);
+      const pct = price!==null?Math.round(price*100):null;
+      const pClass = price>0.65?'price-high':price<0.35?'price-low':'price-mid';
+      const line = lines.find(l=>l.startsWith(`${i+1}.`)) || '';
+      const isYes=/BUY YES/i.test(line), isNo=/BUY NO/i.test(line);
+      const verdictStyle = isYes?'background:var(--green-dim);color:var(--green);border:0.5px solid rgba(34,197,94,.3)':isNo?'background:var(--red-dim);color:var(--red);border:0.5px solid rgba(239,68,68,.25)':'background:var(--gold-dim);color:var(--gold);border:0.5px solid var(--gold-border)';
+      const verdictTxt = isYes?'▲ BUY YES':isNo?'▼ BUY NO':'◆ NEUTRE';
+      const expl = line.replace(/^\d+\.\s*/,'').replace(/BUY YES|BUY NO|NEUTRE/gi,'').replace(/^[—\-\s]+/,'').trim();
+
+      el.innerHTML = `
+        <div class="mini-question">${m.question||m.title||''}</div>
+        <div class="mini-meta">
+          <div class="mini-price ${pClass}">${pct!==null?pct+'%':'?'}</div>
+          <div class="mini-vol">VOL ${m.volume?fmtVol(m.volume):'—'}</div>
+          <div class="mini-verdict" style="${verdictStyle}">${verdictTxt}</div>
+        </div>
+        ${expl?`<div class="mini-analysis-text">${expl}</div>`:''}
+      `;
+    });
+  } catch(e) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠</div><div class="empty-title">Erreur</div><div class="empty-sub">${e.message}</div></div>`;
+  }
+  btn.disabled=false; btn.textContent='⚡ SCANNER TOUT';
+}
+
+function calcEV() {
+  const mp = parseFloat(document.getElementById('ev-market-price').value)/100;
+  const tp = parseFloat(document.getElementById('ev-true-prob').value)/100;
+  const stake = parseFloat(document.getElementById('ev-stake').value);
+  if (isNaN(mp)||isNaN(tp)||isNaN(stake)) return;
+  const payout = stake/mp;
+  const ev = tp*payout - stake;
+  const evPct = ((ev/stake)*100).toFixed(1);
+  const el = document.getElementById('ev-result');
+  el.style.display='block';
+  const valEl = document.getElementById('ev-value');
+  const subEl = document.getElementById('ev-sub');
+  valEl.textContent = (ev>=0?'+':'')+'$'+ev.toFixed(2);
+  valEl.className = 'ev-result-value '+(ev>0?'ev-positive':ev<0?'ev-negative':'ev-neutral');
+  subEl.textContent = `EV% : ${evPct>0?'+':''}${evPct}% | Payout si gagne : $${payout.toFixed(2)}`;
+}
+
+function calcKelly() {
+  const p = parseFloat(document.getElementById('kelly-prob').value)/100;
+  const b = parseFloat(document.getElementById('kelly-odds').value)-1;
+  const bankroll = parseFloat(document.getElementById('kelly-bankroll').value);
+  if (isNaN(p)||isNaN(b)||isNaN(bankroll)) return;
+  const q = 1-p;
+  const k = Math.max(0,(p*b-q)/b);
+  const halfK = k/2;
+  const mise = (halfK*bankroll).toFixed(2);
+  const el = document.getElementById('kelly-result');
+  el.style.display='block';
+  const valEl = document.getElementById('kelly-value');
+  const subEl = document.getElementById('kelly-sub');
+  valEl.textContent = '$'+mise;
+  valEl.className = 'ev-result-value '+(parseFloat(mise)>0?'ev-positive':'ev-negative');
+  subEl.textContent = `Kelly: ${(k*100).toFixed(1)}% | Half-Kelly: ${(halfK*100).toFixed(1)}% | Sur $${bankroll}`;
+}
+
+function runSimulation() {
+  const wr = parseFloat(document.getElementById('sim-winrate').value)/100;
+  const pct = parseFloat(document.getElementById('sim-pct').value)/100;
+  const trades = parseInt(document.getElementById('sim-trades').value);
+  if (isNaN(wr)||isNaN(pct)||isNaN(trades)) return;
+
+  let bankroll = 10;
+  let wins=0,losses=0;
+  const history=[10];
+  for(let i=0;i<trades;i++){
+    const mise = bankroll*pct;
+    if(Math.random()<wr){ bankroll+=mise; wins++; }
+    else{ bankroll-=mise; losses++; }
+    history.push(parseFloat(bankroll.toFixed(2)));
+    if(bankroll<0.01) break;
+  }
+
+  const gain = bankroll-10;
+  const roi = ((bankroll/10-1)*100).toFixed(1);
+  document.getElementById('sim-result').innerHTML =
+    `Résultat : <strong style="color:${bankroll>=10?'var(--green)':'var(--red)'}">$${bankroll.toFixed(2)}</strong> | ROI : ${roi>0?'+':''}${roi}% | Victoires : ${wins}/${wins+losses}`;
+
+  // Mini sparkline
+  const maxH=60, w=460;
+  const maxV=Math.max(...history), minV=Math.min(...history,0);
+  const range=maxV-minV||1;
+  const pts=history.map((v,i)=>`${(i/(history.length-1)*w).toFixed(1)},${(maxH-(v-minV)/range*maxH).toFixed(1)}`).join(' ');
+  document.getElementById('sim-chart').innerHTML=`<svg viewBox="0 0 ${w} ${maxH}" width="100%" height="${maxH}" style="display:block"><polyline points="${pts}" fill="none" stroke="${bankroll>=10?'var(--green)':'var(--red)'}" stroke-width="1.5"/><line x1="0" y1="${(maxH-(10-minV)/range*maxH).toFixed(1)}" x2="${w}" y2="${(maxH-(10-minV)/range*maxH).toFixed(1)}" stroke="var(--border2)" stroke-width="0.5" stroke-dasharray="4,4"/></svg>`;
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  appendMsg('user', text);
+  chatHistory.push({role:'user',content:text});
+
+  const typingEl = document.createElement('div');
+  typingEl.className = 'msg-typing';
+  typingEl.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+  document.getElementById('chat-messages').appendChild(typingEl);
+  scrollChat();
+
+  const systemCtx = selectedMarket
+    ? `Marché actuel sélectionné : "${selectedMarket.question||selectedMarket.title}" — Prix : ${Math.round((parsePrice(selectedMarket.outcomePrices||selectedMarket.tokens)||0)*100)}%`
+    : '';
+
+  const messages = [
+    {role:'user', content:`Tu es POLYMIND, un analyste expert en marchés de prédiction Polymarket. Tu conseilles un trader avec $10 de capital. ${systemCtx}\n\nQuestion : ${text}\n\nRéponds en français, de façon concise et utile.`}
+  ];
+
+  try {
+    const r = await fetch('/api/claude', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages})
+    });
+    const d = await r.json();
+    const reply = d.content?.[0]?.text||'Erreur de réponse.';
+    typingEl.remove();
+    chatHistory.push({role:'assistant',content:reply});
+    appendMsg('ai', reply);
+  } catch(e) {
+    typingEl.remove();
+    appendMsg('ai', `⚠ Erreur : ${e.message}`);
+  }
+}
+
+function appendMsg(role, text) {
+  const el = document.createElement('div');
+  el.className = 'msg '+role;
+  const html = text
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\n/g,'<br>');
+  el.innerHTML = html;
+  document.getElementById('chat-messages').appendChild(el);
+  scrollChat();
+}
+
+function scrollChat() {
+  const msgs = document.getElementById('chat-messages');
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function sendChip(el) {
+  document.getElementById('chat-input').value = el.textContent;
+  switchTab('chat', document.querySelectorAll('.tab')[3]);
+  sendChat();
+}
+
+function chatKeydown(e) {
+  if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+function switchTab(id, el) {
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if (el) {
+    const tabs = document.querySelectorAll('.tab');
+    const map = {analyse:0,scanner:1,ev:2,chat:3};
+    tabs[map[id]]?.classList.add('active');
+  }
+}
+
+// Init
+renderWatchlist();
+runSimulation();
+</script>
+</body>
+</html>
